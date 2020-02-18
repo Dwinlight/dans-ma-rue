@@ -33,8 +33,50 @@ exports.statsByArrondissement = (client, callback) => {
 }
 
 exports.statsByType = (client, callback) => {
-    // TODO Trouver le top 5 des types et sous types d'anomalies
-    callback([]);
+    client.search({
+        index : "dansmarue",
+        size: 0,
+        body:{
+            aggs : {
+                "type" : {
+                    "terms": {
+                        "field": "type.keyword",
+                        "order" : { "_count": "desc" }
+                    },
+                    aggs : {
+                      "sous_type" : {
+                        "terms": {
+                          "field": "sous_type.keyword",
+                          "order" : { "_count": "desc" }
+                           }
+                        }
+                      }
+                  
+                }
+            }
+        }
+            
+    
+    }).then((resp) =>{
+        const tab =[];
+        const aggr = resp.body.aggregations.type.buckets;
+        for(let i =0; i<5;i++){
+            let sousTab =[];
+            const sous = aggr[i].sous_type.buckets
+            for(let j=0; j<5;j++){
+                sousTab.push({
+                    "sous_type": sous[j]["key"],
+                    "count": sous[j]["doc_count"]
+                });}
+            tab.push({
+                "type": aggr[i]["key"],
+                "count": aggr[i]["doc_count"],
+                "sous_type": sousTab
+            });
+        }                
+        
+        callback(tab);
+    }, err => console.error(err.meta.body.error));
 }
 
 exports.statsByMonth = (client, callback) => {
