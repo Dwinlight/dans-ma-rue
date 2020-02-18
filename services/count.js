@@ -26,8 +26,23 @@ exports.count = (client, from, to, callback) => {
 }
 
 exports.countAround = (client, lat, lon, radius, callback) => {
-    // TODO Compter le nombre d'anomalies autour d'un point géographique, dans un rayon donné
-    callback({
-        count: 0
-    })
+    client
+        .count({
+            index: 'dansmarue',
+            body: {
+                query: {
+                    "bool": {
+                        "filter": {
+                            "geo_distance": {
+                                "distance": radius,
+                                "location": [lon, lat]
+                            }
+                        }
+                    }
+                }
+            }
+        })
+        .then(resp => callback({
+            count: resp.body.count
+        }), err => console.error(err.meta.body.error));
 }
