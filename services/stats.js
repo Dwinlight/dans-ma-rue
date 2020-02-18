@@ -112,6 +112,36 @@ exports.statsByMonth = (client, callback) => {
 }
 
 exports.statsPropreteByArrondissement = (client, callback) => {
-    // TODO Trouver le top 3 des arrondissements avec le plus d'anomalies concernant la propreté
-    callback([]);
+    client.search({
+        index : "dansmarue",
+        size: 0,
+        body:{
+            "query": {
+                "match": {
+                  "type": "Propreté"
+                }
+              },
+            aggs : {
+                "arrondissement" : {
+                    "terms": {
+                        "field": "arrondissement.keyword",
+                        "order" : { "_count": "desc" }
+
+                    }
+                }
+        }
+    }
+    }).then((resp) =>{
+        const tab =[];
+        const aggr = resp.body.aggregations.arrondissement.buckets;
+        for(let i = 0;i<3;i++){
+            tab.push({
+                "arrondissement": aggr[i]["key"],
+                "count": aggr[i]["doc_count"]
+            });
+        }
+    
+        callback(tab);
+    }, err => console.error(err.meta.body.error));
+
 }
