@@ -80,8 +80,35 @@ exports.statsByType = (client, callback) => {
 }
 
 exports.statsByMonth = (client, callback) => {
-    // TODO Trouver le top 10 des mois avec le plus d'anomalies
-    callback([]);
+    client.search(
+        { 
+            index:indexName,
+            body: { 
+                aggs : { 
+                    "anomalieParmois": { 
+                        "date_histogram": { 
+                            "field": "@timestamp",
+                            "calendar_interval": "month",
+                            "format": "MM/yyyy",
+                            "order" : { "_count": "desc" }
+                        }
+                    }
+                }
+            }
+        }
+    ).then((resp)=>{ 
+        let tab = []
+        const temp = resp.body.aggregations.anomalieParmois.buckets;
+        for(let i = 0;i<10;i++){
+            tab.push({
+                "date" : temp[i]["key_as_string"],
+                "count": temp[i]["doc_count"]
+            })
+        }
+        callback({
+            body: tab
+        })
+    })
 }
 
 exports.statsPropreteByArrondissement = (client, callback) => {
